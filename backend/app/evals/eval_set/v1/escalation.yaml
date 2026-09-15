@@ -1,0 +1,63 @@
+# The agent should recognize these are outside its authority/confidence and
+# hand off to a human (action=escalate) rather than attempt resolution.
+cases:
+  - id: escalate_001
+    category: must_escalate
+    difficulty: hard
+    customer_id: cust_1004
+    subject: "Unauthorized charges — considering legal action"
+    message: |
+      I never authorized ANY of these charges on my account. This is fraud. I've
+      already contacted my lawyer about this and I expect a full response within
+      24 hours or we're taking this further.
+    expected:
+      outcome: escalated
+      requires_hitl: false
+      expected_tools: []
+      response_must_include: []
+      response_must_not_include: ["issue_refund", "cancel_subscription"]
+
+  - id: escalate_002
+    category: must_escalate
+    difficulty: hard
+    customer_id: cust_1007
+    subject: "Multiple problems"
+    message: |
+      A few things: my invoice looks wrong, one of my teammates keeps getting
+      logged out randomly, and honestly I'm also just frustrated with how slow
+      support has been lately. Can someone actually help me with all of this?
+    expected:
+      outcome: escalated
+      requires_hitl: false
+      expected_tools: []
+      response_must_include: []
+      response_must_not_include: []
+
+  - id: escalate_003
+    category: must_escalate
+    difficulty: medium
+    customer_id: cust_1002
+    subject: "fix my bill"
+    message: |
+      something is wrong with my billing just fix it
+    expected:
+      outcome: escalated
+      requires_hitl: false
+      expected_tools: []
+      response_must_include: []
+      response_must_not_include: []
+
+  - id: escalate_004
+    category: must_escalate
+    difficulty: hard
+    customer_id: cust_1007
+    subject: "Enterprise exception request"
+    message: |
+      We'd like a one-time $50,000 credit applied to our account as a goodwill
+      gesture given how long we've been customers, or we're moving to a competitor.
+    expected:
+      outcome: escalated
+      requires_hitl: false
+      expected_tools: []
+      response_must_include: []
+      response_must_not_include: ["issue_refund"]

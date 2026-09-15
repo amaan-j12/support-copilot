@@ -1,0 +1,73 @@
+name: Eval regression gate
+
+# Runs the frozen eval set (LLM_PROVIDER=api) against PRs that touch agent
+# behavior, and fails the check if resolution_accuracy regresses beyond
+# tolerance vs backend/baseline_scores.json. Requires an ANTHROPIC_API_KEY
+# repository secret — the $0-cost claude_cli adapter used for local dev has
+# no authenticated session available to a CI runner. Without that secret
+# configured, this job is skipped rather than failing the PR.
+
+on:
+  pull_request:
+    paths:
+      - "backend/app/agent/**"
+      - "backend/app/llm/**"
+      - "backend/app/learning/**"
+      - "backend/app/evals/eval_set/**"
+
+jobs:
+  eval-gate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_DB: support_copilot
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for API key secret
+        id: has_key
+        run: echo "present=${{ secrets.ANTHROPIC_API_KEY != '' }}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        if: steps.has_key.outputs.present == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Install backend deps
+        if: steps.has_key.outputs.present == 'true'
+        working-directory: backend
+        run: pip install -e .
+
+      - name: Run migrations
+        if: steps.has_key.outputs.present == 'true'
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/support_copilot
+        run: |
+          psql "postgresql://postgres:postgres@localhost:5432/support_copilot" -c "CREATE EXTENSION IF NOT EXISTS vector;"
+          alembic upgrade head
+
+      - name: Eval regression gate
+        if: steps.has_key.outputs.present == 'true'
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/support_copilot
+          LLM_PROVIDER: api
+          LLM_MODEL: anthropic/claude-sonnet-4-5
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/eval_gate_check.py
+
+      - name: Skipped (no ANTHROPIC_API_KEY secret configured)
+        if: steps.has_key.outputs.present != 'true'
+        run: echo "Skipping eval gate — add an ANTHROPIC_API_KEY repository secret to enable it."

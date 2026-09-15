@@ -1,0 +1,52 @@
+[project]
+name = "support-copilot"
+version = "0.1.0"
+description = "Self-learning AI customer support agent"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.14",
+    "psycopg[binary]>=3.2",
+    "pgvector>=0.3.6",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "langgraph>=0.2.60",
+    "langchain-core>=0.3.28",
+    "litellm>=1.55",
+    "python-dotenv>=1.0",
+    "pyyaml>=6.0",
+    "apscheduler>=3.10",
+]
+
+[project.optional-dependencies]
+# Only needed for ClaudeCLIAdapter's local embedding fallback (dev, $0-cost
+# workflow). The production image (LLM_PROVIDER=api) never installs this —
+# APIAdapter embeds via the provider's own API — so it stays out of the
+# ~1-2GB torch download entirely.
+local-embeddings = [
+    "sentence-transformers>=3.3",
+]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.28",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# B008: FastAPI's `Depends(...)` in argument defaults is the idiomatic
+# pattern, not a real bug — every route in app/api/ uses it deliberately.
+ignore = ["B008"]

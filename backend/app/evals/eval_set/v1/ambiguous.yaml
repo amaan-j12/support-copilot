@@ -1,0 +1,49 @@
+# Plausible-sounding requests that should NOT result in a refund once the
+# agent checks the actual policy/data — the core test against the
+# over-eager-refunding failure mode.
+cases:
+  - id: ambiguous_001
+    category: ambiguous
+    difficulty: hard
+    customer_id: cust_1002
+    subject: "Downgrading and want this month back"
+    message: |
+      I want to downgrade to the Free plan starting now, and I'd like a refund for
+      the rest of this month since I won't be using Team features anymore.
+    expected:
+      outcome: resolved
+      requires_hitl: false
+      expected_tools: [kb_search]
+      response_must_include: ["credit"]
+      response_must_not_include: ["issue_refund"]
+
+  - id: ambiguous_002
+    category: ambiguous
+    difficulty: medium
+    customer_id: cust_1006
+    subject: "Removed a seat, bill didn't change"
+    message: |
+      I removed two seats from my team two weeks ago but my invoice this month
+      is still the same amount. Isn't that a billing error?
+    expected:
+      outcome: resolved
+      requires_hitl: false
+      expected_tools: [account_lookup, kb_search]
+      response_must_include: ["next"]
+      response_must_not_include: ["issue_refund"]
+
+  - id: ambiguous_003
+    category: ambiguous
+    difficulty: medium
+    customer_id: cust_1003
+    subject: "Refund for seats I added by mistake"
+    message: |
+      I accidentally added 3 extra seats last week when I meant to just invite
+      one person, and now I'm worried about being charged for all of them. Can I
+      get money back for the ones I don't need?
+    expected:
+      outcome: resolved
+      requires_hitl: false
+      expected_tools: [account_lookup, kb_search]
+      response_must_include: []
+      response_must_not_include: []

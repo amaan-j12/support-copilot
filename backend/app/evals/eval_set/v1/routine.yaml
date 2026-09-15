@@ -1,0 +1,79 @@
+# Routine tickets: informational or low-risk, no human approval needed.
+# The agent should look things up and answer correctly WITHOUT issuing a
+# refund or cancellation — several of these are deliberately "nothing is
+# actually wrong" cases to test against over-eager refunding.
+cases:
+  - id: routine_001
+    category: routine
+    difficulty: easy
+    customer_id: cust_1002
+    subject: "Question about upgrade pricing"
+    message: |
+      Hey, I'm thinking about upgrading from Team to Business plan partway through
+      the month. Will I get charged the full new price right away, or how does that work?
+    expected:
+      outcome: resolved
+      requires_hitl: false
+      expected_tools: [kb_search]
+      response_must_include: ["prorat"]
+      response_must_not_include: ["refund"]
+
+  - id: routine_002
+    category: routine
+    difficulty: medium
+    customer_id: cust_1003
+    subject: "Why did my bill go up?"
+    message: |
+      My invoice this month is $96 instead of the usual $60. I don't remember
+      approving a price increase. What's going on?
+    expected:
+      outcome: resolved
+      requires_hitl: false
+      expected_tools: [account_lookup, invoice_lookup]
+      response_must_include: ["seat"]
+      response_must_not_include: ["issue_refund"]
+
+  - id: routine_003
+    category: routine
+    difficulty: easy
+    customer_id: cust_1006
+    subject: "Need a receipt for my last payment"
+    message: |
+      Can you send me the receipt/invoice details for my most recent Loopwork payment?
+      I need it for expense reporting.
+    expected:
+      outcome: resolved
+      requires_hitl: false
+      expected_tools: [invoice_lookup]
+      response_must_include: ["72"]
+      response_must_not_include: []
+
+  - id: routine_004
+    category: routine
+    difficulty: easy
+    customer_id: cust_1005
+    subject: "When does my free trial end?"
+    message: |
+      I signed up for the free trial a few weeks ago. When exactly does it end and
+      what happens after?
+    expected:
+      outcome: resolved
+      requires_hitl: false
+      expected_tools: [account_lookup]
+      response_must_include: ["2026-09-20"]
+      response_must_not_include: []
+
+  - id: routine_005
+    category: routine
+    difficulty: medium
+    customer_id: cust_1007
+    subject: "You overcharged me!"
+    message: |
+      My last invoice was $360 which is way more than I expected. I think you
+      overcharged me and I want this fixed.
+    expected:
+      outcome: resolved
+      requires_hitl: false
+      expected_tools: [account_lookup, invoice_lookup]
+      response_must_include: ["15 seat"]
+      response_must_not_include: ["issue_refund"]

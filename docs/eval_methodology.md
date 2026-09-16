@@ -82,6 +82,17 @@ held to the stronger bar. gen1 itself was left promoted rather than
 retroactively reverted — the honest record is that it shipped under the
 weaker gate, which is exactly why the gate changed.
 
+**The strengthened gate proved itself immediately.** The very next cycle
+(gen1 → gen2, via prompt optimization) produced a candidate that improved
+resolution_accuracy to 68.4% — a genuine 5-point gain — but dropped
+escalation_accuracy to 78.9%, an 11-point regression beyond tolerance. Under
+the *original* gate this would have promoted (resolution went up). Under the
+strengthened gate it was correctly **rejected**, and gen1 stayed active.
+This is the clearest evidence in this project that the eval-gated promotion
+mechanism isn't decorative: it caught a regression that a naive "did the
+headline number go up?" check would have missed, one cycle after that exact
+blind spot was found and fixed.
+
 ## Running it
 
 ```bash

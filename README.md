@@ -47,19 +47,27 @@ Full diagrams and the data model: [`docs/architecture.md`](docs/architecture.md)
 
 | Generation | Created by | Status | Resolution acc. | Escalation acc. | Tool F1 |
 |---|---|---|---|---|---|
-| gen0 (baseline) | — | active (superseded) | **63.2%** | 94.7% | 0.76 |
-| gen1 | reflection loop | active | 63.2% | 89.5% | 0.63 |
+| gen0 (baseline) | — | superseded | 63.2% | **94.7%** | **0.76** |
+| gen1 | reflection loop | **active** | 63.2% | 89.5% | 0.63 |
+| gen2 | prompt optimizer | rejected | **68.4%** | 78.9% | 0.60 |
 
 (Live-updating table lives in the dashboard's Eval Scoreboard page. See
-[`docs/eval_methodology.md`](docs/eval_methodology.md) for what each metric
-means, why 63% is a real, not-cherry-picked baseline, and — importantly —
-**why gen1 is a deliberately-included honest result, not a cherry-picked
-win**: it tied the baseline on resolution accuracy but regressed on
-escalation accuracy and tool-call F1, which is exactly the trade-off the
-original resolution-only promotion gate missed. That finding is what led to
-strengthening the gate to check all three metrics before any later
-generation can promote — see the "Promotion gate" section of the eval
-methodology doc for the full story and the regression test that locks it in.)
+[`docs/eval_methodology.md`](docs/eval_methodology.md) for the full story —
+this table is intentionally not a clean upward line, because that's the
+honest record of what the eval gate actually did:
+
+- **gen1** tied gen0 on resolution accuracy but quietly regressed
+  escalation accuracy and tool-call F1. The original gate only checked
+  resolution accuracy, so it promoted anyway — a real gap, found by testing,
+  not hypothesized in advance.
+- That finding is exactly what led to strengthening the gate to require
+  **all three metrics** not to regress before promotion (see
+  `app/learning/eval_gate.py::passes_gate`, with a regression test built
+  from this incident).
+- **gen2** then tested that fix immediately: it improved resolution accuracy
+  to 68.4% but dropped escalation accuracy to 78.9% — and the strengthened
+  gate correctly **rejected** it, keeping gen1 active. This is the
+  promotion gate doing exactly the job it exists for.)
 
 ## Quickstart (local, $0 cost)
 

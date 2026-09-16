@@ -78,8 +78,15 @@ confidently, escalates the rest":
   tickets (step 3 above) is for.
 - The self-learning loop means this number is a floor, not a ceiling: every
   promoted generation is evaluated against the *same* held-out set, so
-  "gen12 resolves 78% instead of gen0's 63%" is a verifiable claim, not a
-  vendor promise.
+  "a later generation resolves more than gen0's 63%" is a verifiable claim,
+  not a vendor promise — and so is the inverse. In this project's own build,
+  a prompt-optimization candidate (gen2) raised resolution accuracy to
+  68.4% but dropped escalation accuracy from 89.5% to 78.9%, and the
+  promotion gate **rejected it**, keeping the safer generation active. A
+  system that only reports the wins isn't trustworthy; one whose gate
+  visibly rejects a real regression the day after that exact blind spot was
+  found is closer to what a company should actually want running against
+  real customers.
 
 ## Where human oversight stays necessary — stated plainly
 

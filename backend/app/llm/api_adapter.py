@@ -2,7 +2,7 @@
 
 Used for the eventual live deploy (Railway) once the user is ready to spend a
 small API budget; provider is whatever `LLM_MODEL` (a litellm model id, e.g.
-"anthropic/claude-sonnet-4-5" or "gpt-4.1") resolves to. Selecting this
+"anthropic/claude-sonnet-5" or "gpt-4.1") resolves to. Selecting this
 adapter over ClaudeCLIAdapter is a single `LLM_PROVIDER=api` env var change.
 """
 

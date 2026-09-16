@@ -12,11 +12,9 @@ from sqlalchemy.orm import Session
 
 from app.db.models import AgentVersion
 from app.evals.runner import run_eval
-from app.learning.eval_gate import latest_completed_eval_run, resolution_accuracy
+from app.learning.eval_gate import compute_metrics, latest_completed_eval_run, passes_gate
 from app.learning.reflection import build_candidate_playbook_entries
 from app.llm.base import LLMAdapter
-
-RESOLUTION_REGRESSION_TOLERANCE = 0.0  # candidate must score >= base to promote
 
 
 def run_reflection_learning_cycle(
@@ -33,7 +31,7 @@ def run_reflection_learning_cycle(
         raise RuntimeError(
             f"Active version gen{base_version.generation_number} has no completed eval run to compare against."
         )
-    base_accuracy = resolution_accuracy(db, base_run)
+    base_metrics = compute_metrics(db, base_run)
 
     latest_gen = db.query(AgentVersion).order_by(AgentVersion.generation_number.desc()).first()
     next_gen_number = latest_gen.generation_number + 1
@@ -66,15 +64,22 @@ def run_reflection_learning_cycle(
         triggered_by="reflection_loop",
         is_candidate_eval=True,
     )
-    candidate_accuracy = resolution_accuracy(db, candidate_run)
+    candidate_metrics = compute_metrics(db, candidate_run)
+    ok, reason = passes_gate(candidate_metrics, base_metrics)
 
     print(
-        f"\nBase gen{base_version.generation_number}: {base_accuracy:.1%}  ->  "
-        f"Candidate gen{next_gen_number}: {candidate_accuracy:.1%}"
+        f"\nBase gen{base_version.generation_number}: "
+        f"resolution={base_metrics.resolution_accuracy:.1%} "
+        f"escalation={base_metrics.escalation_accuracy:.1%} "
+        f"tool_f1={base_metrics.avg_tool_call_f1:.2f}\n"
+        f"Candidate gen{next_gen_number}: "
+        f"resolution={candidate_metrics.resolution_accuracy:.1%} "
+        f"escalation={candidate_metrics.escalation_accuracy:.1%} "
+        f"tool_f1={candidate_metrics.avg_tool_call_f1:.2f}"
     )
 
     now = datetime.now(UTC)
-    if candidate_accuracy >= base_accuracy - RESOLUTION_REGRESSION_TOLERANCE:
+    if ok:
         candidate_version.status = "active"
         candidate_version.activated_at = now
         base_version.status = "retired"
@@ -88,8 +93,9 @@ def run_reflection_learning_cycle(
         return candidate_version
     else:
         candidate_version.status = "rejected"
+        candidate_version.notes = f"Rejected by eval gate: {reason}"
         for entry in new_entries:
             entry.status = "retired"
         db.commit()
-        print(f"REJECTED gen{next_gen_number} (regressed vs base).")
+        print(f"REJECTED gen{next_gen_number}: {reason}")
         return None

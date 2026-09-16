@@ -18,6 +18,12 @@ from app.db.models import PlaybookEntry, Reflection
 from app.llm.base import LLMAdapter
 
 MIN_CONFIDENCE = 0.5
+# A real lesson reads as a sentence ("Always verify X before Y..."); short
+# strings are almost always a degenerate/placeholder model output rather
+# than a substantive lesson (observed in practice: a reflection call once
+# returned literally "test lesson" as proposed_lesson with high confidence —
+# confidence alone doesn't guarantee content quality).
+MIN_LESSON_LENGTH = 20
 
 
 def unincorporated_reflections(db: Session) -> list[Reflection]:
@@ -33,7 +39,11 @@ def unincorporated_reflections(db: Session) -> list[Reflection]:
         .filter(Reflection.confidence >= MIN_CONFIDENCE)
         .all()
     )
-    return [r for r in reflections if r.id not in incorporated_ids]
+    return [
+        r
+        for r in reflections
+        if r.id not in incorporated_ids and len(r.proposed_lesson.strip()) >= MIN_LESSON_LENGTH
+    ]
 
 
 def build_candidate_playbook_entries(

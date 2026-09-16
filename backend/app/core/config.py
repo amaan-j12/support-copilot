@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # "claude_cli"  -> shells out to the local `claude` CLI, $0 marginal cost, needs `claude` on PATH.
     # "api"         -> real API call via litellm (ANTHROPIC_API_KEY / OPENAI_API_KEY etc).
     llm_provider: Literal["claude_cli", "api"] = "claude_cli"
-    llm_model: str = "claude-sonnet-4-5"  # used only when llm_provider == "api" (litellm model id)
+    llm_model: str = "anthropic/claude-sonnet-5"  # used only when llm_provider == "api" (litellm model id)
     claude_cli_model: str = "sonnet"  # passed to `claude --model`
     claude_cli_timeout_s: int = 120
 

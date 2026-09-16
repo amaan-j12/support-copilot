@@ -7,7 +7,7 @@
 # Required backend service variables (Railway dashboard, not committed):
 #   DATABASE_URL     — from the Postgres plugin
 #   LLM_PROVIDER      = api
-#   LLM_MODEL         = anthropic/claude-sonnet-4-5  (or any litellm model id)
+#   LLM_MODEL         = anthropic/claude-sonnet-5  (or any litellm model id)
 #   ANTHROPIC_API_KEY
 #   LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY (optional)
 

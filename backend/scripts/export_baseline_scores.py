@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.db.models import AgentVersion
 from app.db.session import SessionLocal
-from app.learning.eval_gate import latest_completed_eval_run, resolution_accuracy
+from app.learning.eval_gate import compute_metrics, latest_completed_eval_run
 
 OUT_PATH = Path(__file__).resolve().parent.parent / "baseline_scores.json"
 
@@ -26,10 +26,13 @@ def main() -> None:
     if eval_run is None:
         raise SystemExit("Active version has no completed eval run.")
 
+    metrics = compute_metrics(db, eval_run)
     payload = {
         "generation_number": active.generation_number,
         "eval_set_version": "v1",
-        "resolution_accuracy": round(resolution_accuracy(db, eval_run), 4),
+        "resolution_accuracy": round(metrics.resolution_accuracy, 4),
+        "escalation_accuracy": round(metrics.escalation_accuracy, 4),
+        "avg_tool_call_f1": round(metrics.avg_tool_call_f1, 4),
     }
     OUT_PATH.write_text(json.dumps(payload, indent=2) + "\n")
     print(f"Wrote {OUT_PATH}: {payload}")

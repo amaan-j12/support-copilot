@@ -143,6 +143,11 @@ providers is one environment variable, not a code change.
   varied baseline and a genuine promote/reject signal; expanding it (more
   `app/evals/eval_set/v1/*.yaml` files) directly increases confidence
   without any code changes.
+- **Learning cycles are triggered manually** (`scripts/simulate_traffic.py`
+  → `scripts/run_learning_cycle.py` / `scripts/run_prompt_optimization.py`),
+  not on an in-process scheduler. The logic these scripts call
+  (`app/learning/*.py`) is exactly what a nightly APScheduler job or cron
+  trigger would call — wiring one up is additive, not a redesign.
 
 ## Deployment
 

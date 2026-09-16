@@ -64,7 +64,7 @@ jobs:
         env:
           DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/support_copilot
           LLM_PROVIDER: api
-          LLM_MODEL: anthropic/claude-sonnet-4-5
+          LLM_MODEL: anthropic/claude-sonnet-5
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python scripts/eval_gate_check.py
 

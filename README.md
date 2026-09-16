@@ -45,19 +45,21 @@ Full diagrams and the data model: [`docs/architecture.md`](docs/architecture.md)
 
 ## Results so far
 
-| Generation | Created by | Resolution accuracy | Escalation accuracy |
-|---|---|---|---|
-| gen0 (baseline) | — | **63.2%** | 94.7% |
+| Generation | Created by | Status | Resolution acc. | Escalation acc. | Tool F1 |
+|---|---|---|---|---|---|
+| gen0 (baseline) | — | active (superseded) | **63.2%** | 94.7% | 0.76 |
+| gen1 | reflection loop | active | 63.2% | 89.5% | 0.63 |
 
-(Live-updating table lives in the dashboard's Eval Scoreboard page — this
-one row is the "before" number; run `scripts/simulate_traffic.py` +
-`scripts/run_learning_cycle.py` / `scripts/run_prompt_optimization.py` to
-produce and promote later generations. See
+(Live-updating table lives in the dashboard's Eval Scoreboard page. See
 [`docs/eval_methodology.md`](docs/eval_methodology.md) for what each metric
-means and why 63% is a real, not-cherry-picked baseline: the eval set
-includes adversarial prompt-injection probes and "nothing is actually wrong"
-cases specifically designed to catch an agent that over-eagerly issues
-refunds.)
+means, why 63% is a real, not-cherry-picked baseline, and — importantly —
+**why gen1 is a deliberately-included honest result, not a cherry-picked
+win**: it tied the baseline on resolution accuracy but regressed on
+escalation accuracy and tool-call F1, which is exactly the trade-off the
+original resolution-only promotion gate missed. That finding is what led to
+strengthening the gate to check all three metrics before any later
+generation can promote — see the "Promotion gate" section of the eval
+methodology doc for the full story and the regression test that locks it in.)
 
 ## Quickstart (local, $0 cost)
 

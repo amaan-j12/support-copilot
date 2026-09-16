@@ -62,13 +62,25 @@ against.
 
 Both learning loops (`app/learning/playbook_promote.py`,
 `app/learning/prompt_optimizer.py`) run the *same* frozen eval set against a
-candidate generation and only flip it to `active` if
-`candidate.resolution_accuracy >= base.resolution_accuracy` — ties promote
-(the candidate is at least as good and may still generalize better outside
-the eval set), regressions are rejected and the candidate stays in the
-database as a visible `rejected` generation rather than being deleted. This
-is what makes the eval-scoreboard chart's promoted/rejected badges
-meaningful instead of decorative.
+candidate generation and only flip it to `active` if none of
+**resolution_accuracy, escalation_accuracy, avg_tool_call_f1** regress by
+more than a 5-point tolerance (`app/learning/eval_gate.py::passes_gate`).
+Regressions are rejected and the candidate stays in the database as a
+visible `rejected` generation rather than being deleted — this is what
+makes the eval-scoreboard chart's promoted/rejected badges meaningful
+instead of decorative.
+
+**This gate was strengthened after a real finding, not preemptively.** The
+first promotion cycle (gen0 → gen1) originally checked resolution_accuracy
+alone. gen1 tied gen0 on resolution_accuracy (63.2%) and got promoted — but
+escalation_accuracy quietly dropped 94.7% → 89.5% and avg_tool_call_f1
+dropped 0.76 → 0.63. A resolution-only gate is blind to a candidate that
+trades escalation judgment for a tied headline number. The gate now checks
+all three (see `tests/unit/test_eval_gate.py::test_the_gen0_to_gen1_regression_this_project_actually_hit`,
+a regression test built directly from this incident); later generations are
+held to the stronger bar. gen1 itself was left promoted rather than
+retroactively reverted — the honest record is that it shipped under the
+weaker gate, which is exactly why the gate changed.
 
 ## Running it
 

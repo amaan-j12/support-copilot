@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import AgentVersion, EvalResult, EvalSetCase, PromptVersion
 from app.evals.runner import run_eval
-from app.learning.eval_gate import latest_completed_eval_run, resolution_accuracy
+from app.learning.eval_gate import compute_metrics, latest_completed_eval_run, passes_gate
 from app.llm.base import LLMAdapter
 
 MAX_FAILURES_CONSIDERED = 8
@@ -82,7 +82,7 @@ def run_prompt_optimization_cycle(
     if not failures:
         print("No failing cases on the current active version — nothing to optimize.")
         return None
-    base_accuracy = resolution_accuracy(db, base_run)
+    base_metrics = compute_metrics(db, base_run)
 
     prompt = "Here are tickets the agent got wrong:\n\n" + "\n\n".join(
         f"- Subject: {f['subject']}\n"
@@ -139,14 +139,21 @@ def run_prompt_optimization_cycle(
         triggered_by="prompt_optimizer",
         is_candidate_eval=True,
     )
-    candidate_accuracy = resolution_accuracy(db, candidate_run)
+    candidate_metrics = compute_metrics(db, candidate_run)
+    ok, reason = passes_gate(candidate_metrics, base_metrics)
     print(
-        f"\nBase gen{base_version.generation_number}: {base_accuracy:.1%}  ->  "
-        f"Candidate gen{next_gen_number}: {candidate_accuracy:.1%}"
+        f"\nBase gen{base_version.generation_number}: "
+        f"resolution={base_metrics.resolution_accuracy:.1%} "
+        f"escalation={base_metrics.escalation_accuracy:.1%} "
+        f"tool_f1={base_metrics.avg_tool_call_f1:.2f}\n"
+        f"Candidate gen{next_gen_number}: "
+        f"resolution={candidate_metrics.resolution_accuracy:.1%} "
+        f"escalation={candidate_metrics.escalation_accuracy:.1%} "
+        f"tool_f1={candidate_metrics.avg_tool_call_f1:.2f}"
     )
 
     now = datetime.now(UTC)
-    if candidate_accuracy >= base_accuracy:
+    if ok:
         candidate_version.status = "active"
         candidate_version.activated_at = now
         base_version.status = "retired"
@@ -156,6 +163,7 @@ def run_prompt_optimization_cycle(
         return candidate_version
     else:
         candidate_version.status = "rejected"
+        candidate_version.notes = f"{candidate_version.notes or ''}\n\nRejected by eval gate: {reason}".strip()
         db.commit()
-        print(f"REJECTED gen{next_gen_number} (regressed vs base).")
+        print(f"REJECTED gen{next_gen_number}: {reason}")
         return None
